@@ -206,6 +206,31 @@
     padding: 10px 12px;
 }
 
+.rangeFilter {
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+}
+
+.rangeInput {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+    padding: 10px 8px;
+    border: 1px solid #d8d8d8;
+    border-radius: 0;
+    background: #fff;
+    color: #262626;
+    font: inherit;
+}
+
+.rangeInput:focus-visible {
+    border-color: #527600;
+    outline: 2px solid #527600;
+    outline-offset: 2px;
+}
+
 .wrapper :global(.k-filter-row .k-input:focus-within),
 .wrapper :global(.k-filter-row .k-dropdownlist.k-focus) {
     border-color: #527600;

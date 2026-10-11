@@ -6,11 +6,12 @@ export const columns: GridColumn<Order>[] = [
   {
     field: "number",
     title: "Numer zamówienia",
-    filter: "text",
+    filter: true,
   },
   {
     field: "status",
     title: "Status",
+    filter: true,
     filterCell: createDropdownFilter([
       "pending",
       "paid",
@@ -21,11 +22,12 @@ export const columns: GridColumn<Order>[] = [
   {
     field: "total",
     title: "Kwota",
-    filter: "numeric",
+    filter: true,
+    filterType: "numeric",
   },
   {
     field: "currency",
     title: "Waluta",
-    filter: "text",
+    filter: true,
   },
 ];

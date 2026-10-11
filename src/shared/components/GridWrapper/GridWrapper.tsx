@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { createContext, useContext, useId, useState } from "react";
 import {
   Grid,
   GridColumn as KendoGridColumn,
@@ -18,6 +18,19 @@ import styles from "./GridWrapper.module.css";
 
 import { GridSelectedDetails } from "./GridSelectedDetails";
 import { GridRowActions, GridRowActionCell } from "./GridRowActions";
+import { GridFilterContext } from "./GridFilterContext";
+import { NumericRangeFilterCell } from "./NumericRangeFilterCell";
+
+const GridRowStyleContext = createContext<(item: unknown) => string | undefined>(() => undefined);
+
+function GridDataRow({ trProps, dataItem, children }: GridCustomRowProps) {
+  const getClassName = useContext(GridRowStyleContext);
+  return (
+    <tr {...trProps} className={[trProps?.className, getClassName(dataItem)].filter(Boolean).join(" ")}>
+      {children}
+    </tr>
+  );
+}
 
 export function GridWrapper<T>({
   data,
@@ -32,28 +45,16 @@ export function GridWrapper<T>({
   selectedId,
   onSelectionChange,
   onRefresh,
-  rowClassName
+  rowClassName,
 }: GridWrapperProps<T>) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [displayedId, setDisplayedId] = useState<string | number | null>(null);
   const detailsId = useId();
   const displayedItem = data.find((item) => item[dataItemKey] === displayedId);
 
-  const CustomRow = (props: GridCustomRowProps) => {
-    const { trProps, dataItem, children } = props;
-  
-    const customClass = rowClassName?.(dataItem as T);
-  
-    return (
-      <tr
-        {...trProps}
-        className={[trProps?.className, customClass]
-          .filter(Boolean)
-          .join(" ")}
-      >
-        {children}
-      </tr>
-    );
+  const getRowClassName = (dataItem: unknown) => {
+    const item = data.find((record) => record === dataItem);
+    return item !== undefined ? rowClassName?.(item) : undefined;
   };
 
   const handleShowSelected = (id: string | number) => {
@@ -101,70 +102,78 @@ export function GridWrapper<T>({
       </div>
 
       {displayedItem && <GridSelectedDetails data={displayedItem} id={detailsId} />}
-      <GridRowActions
-        dataItemKey={dataItemKey}
-        displayedId={displayedItem != null ? displayedId : null}
-        detailsId={detailsId}
-        loading={loading}
-        onToggle={handleShowSelected}
-      >
-        <Grid
-          data={data}
-          rows={{ data: CustomRow }}
-          dataItemKey={dataItemKey}
-          selectable={{
-            enabled: Boolean(onSelectionChange),
-            mode: "single",
-          }}
-          select={selectedId == null ? {} : { [String(selectedId)]: true }}
-          onSelectionChange={handleSelectionChange}
-          filterable={Boolean(onFilterChange)}
-          {...(filter !== undefined ? { filter } : {})}
-          onFilterChange={handleFilterChange}
-          pageable={{
-            type: "numeric",
-            buttonCount: 10,
-            previousNext: true,
-            info: false,
-            pageSizes: false,
-            responsive: false,
-          }}
-          skip={(pagination.page - 1) * pagination.pageSize}
-          take={pagination.pageSize}
-          total={pagination.total}
-          onPageChange={handlePageChange}
-          {...(detail ? { detail } : {})}
-          detailExpand={detailExpand}
-          onDetailExpandChange={(event) => {
-            const expandedKey = Object.keys(event.detailExpand).find(
-              (key) => event.detailExpand[key] && key !== expandedId,
-            );
-            setExpandedId(expandedKey ?? null);
-          }}
-          showLoader={loading}
-          loader={<LoadingOverlay message={message} />}
-        >
-          {columns.map((column) => (
-            <KendoGridColumn
-              key={column.field}
-              field={column.field}
-              title={column.title}
-              {...(column.width !== undefined ? { width: column.width } : {})}
-              filter={column.filter ?? "text"}
-              filterable={column.filterable ?? true}
-              {...(column.filterCell
-                ? { cells: { filterCell: column.filterCell } }
-                : {})}
-            />
-          ))}
-          <KendoGridColumn
-            title="Akcje"
-            filterable={false}
-            sortable={false}
-            cells={{ data: GridRowActionCell }}
-          />
-        </Grid>
-      </GridRowActions>
+      <GridRowStyleContext value={getRowClassName}>
+        <GridFilterContext value={{
+          filter: filter ?? { logic: "and", filters: [] },
+          onChange: onFilterChange,
+          titles: Object.fromEntries(columns.map((column) => [column.field, column.title])),
+        }}>
+          <GridRowActions
+            dataItemKey={dataItemKey}
+            displayedId={displayedItem != null ? displayedId : null}
+            detailsId={detailsId}
+            loading={loading}
+            onToggle={handleShowSelected}
+          >
+            <Grid
+              data={data}
+              rows={{ data: GridDataRow }}
+              dataItemKey={dataItemKey}
+              selectable={{
+                enabled: Boolean(onSelectionChange),
+                mode: "single",
+              }}
+              select={selectedId == null ? {} : { [String(selectedId)]: true }}
+              onSelectionChange={handleSelectionChange}
+              filterable={Boolean(onFilterChange)}
+              {...(filter !== undefined ? { filter } : {})}
+              onFilterChange={handleFilterChange}
+              pageable={{
+                type: "numeric",
+                buttonCount: 10,
+                previousNext: true,
+                info: false,
+                pageSizes: false,
+                responsive: false,
+              }}
+              skip={(pagination.page - 1) * pagination.pageSize}
+              take={pagination.pageSize}
+              total={pagination.total}
+              onPageChange={handlePageChange}
+              {...(detail ? { detail } : {})}
+              detailExpand={detailExpand}
+              onDetailExpandChange={(event) => {
+                const expandedKey = Object.keys(event.detailExpand).find(
+                  (key) => event.detailExpand[key] && key !== expandedId,
+                );
+                setExpandedId(expandedKey ?? null);
+              }}
+              showLoader={loading}
+              loader={<LoadingOverlay message={message} />}
+            >
+              {columns.map((column) => (
+                <KendoGridColumn
+                  key={column.field}
+                  field={column.field}
+                  title={column.title}
+                  {...(column.width !== undefined ? { width: column.width } : {})}
+                  filter={column.filterType === "range" ? "numeric" : column.filterType ?? "text"}
+                  filterable={column.filter === true}
+                  {...(column.filterCell || column.filterType === "range"
+                    ? { cells: { filterCell: column.filterCell ?? NumericRangeFilterCell } }
+                    : {})}
+                />
+              ))}
+              <KendoGridColumn
+                title="Akcje"
+                filterable={false}
+                sortable={false}
+                cells={{ data: GridRowActionCell }}
+              />
+            </Grid>
+          </GridRowActions>
+        </GridFilterContext>
+      </GridRowStyleContext>
     </div>
   );
 }

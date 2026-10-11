@@ -6,8 +6,8 @@ export interface GridColumn<T> {
   field: keyof T & string;
   title: string;
   width?: number;
-  filter?: 'text' | 'numeric' | 'date' | 'boolean';
-  filterable?: boolean;
+  filter?: boolean;
+  filterType?: 'text' | 'numeric' | 'date' | 'boolean' | 'range';
   filterCell?: ComponentType<GridCustomFilterCellProps>;
 
 }
