@@ -1,0 +1,17 @@
+.overlay {
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  
+    background-color: rgb(255 255 255 / 75%);
+    backdrop-filter: blur(2px);
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    .overlay {
+      backdrop-filter: none;
+    }
+  }

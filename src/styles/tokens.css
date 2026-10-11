@@ -1,0 +1,5 @@
+:root {
+  --app-shell-max-width: 90rem;
+  --app-shell-min-width: 20rem;
+  --app-navigation-target-size: 2.75rem;
+}

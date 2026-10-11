@@ -1,0 +1,59 @@
+.navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--kendo-spacing-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navigation a {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--app-navigation-target-size);
+  padding: var(--kendo-spacing-2) var(--kendo-spacing-4);
+  border-radius: var(--kendo-border-radius-md);
+  color: var(--kendo-color-on-app-surface);
+  text-decoration: none;
+  text-underline-offset: 0.2em;
+  font-weight: var(--kendo-font-weight-medium);
+  transition:
+    background-color var(--kendo-transition-subtle),
+    color var(--kendo-transition-subtle);
+}
+
+.navigation a:hover {
+  background-color: var(--kendo-color-base-subtle-hover);
+}
+
+.navigation a:active {
+  background-color: var(--kendo-color-base-subtle-active);
+}
+
+.navigation a[aria-current='page'] {
+  background-color: var(--kendo-color-primary-subtle);
+  color: var(--kendo-color-primary-on-subtle);
+  font-weight: var(--kendo-font-weight-bold);
+  text-decoration: underline;
+}
+
+.navigation a[aria-current='page']:hover {
+  background-color: var(--kendo-color-primary-subtle-hover);
+}
+
+.navigation a[aria-current='page']:active {
+  background-color: var(--kendo-color-primary-subtle-active);
+}
+
+.navigation a:focus-visible {
+  outline: 2px solid var(--kendo-color-on-app-surface);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navigation a {
+    transition: none;
+  }
+}

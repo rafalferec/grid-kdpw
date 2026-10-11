@@ -1,0 +1,36 @@
+diff --git a/node_modules/@reduxjs/toolkit/dist/index.d.mts b/node_modules/@reduxjs/toolkit/dist/index.d.mts
+index e65ed1e..908070f 100644
+--- a/node_modules/@reduxjs/toolkit/dist/index.d.mts
++++ b/node_modules/@reduxjs/toolkit/dist/index.d.mts
+@@ -794,7 +794,7 @@ interface SerializedError {
+   name?: string;
+   message?: string;
+   stack?: string;
+-  code?: string;
++  code?: string | undefined;
+ }
+ declare class RejectWithValue<Payload, RejectedMeta> {
+   readonly payload: Payload;
+@@ -974,3 +974,3 @@
+ };
+-type OverrideThunkApiConfigs<OldConfig, NewConfig> = Id<NewConfig & Omit<OldConfig, keyof NewConfig>>;
++type OverrideThunkApiConfigs<OldConfig, NewConfig> = NewConfig & Omit<OldConfig, keyof NewConfig>;
+ type CreateAsyncThunkFunction<CurriedThunkApiConfig extends AsyncThunkConfig> = {
+diff --git a/node_modules/@reduxjs/toolkit/dist/index.d.ts b/node_modules/@reduxjs/toolkit/dist/index.d.ts
+index e65ed1e..908070f 100644
+--- a/node_modules/@reduxjs/toolkit/dist/index.d.ts
++++ b/node_modules/@reduxjs/toolkit/dist/index.d.ts
+@@ -794,7 +794,7 @@ interface SerializedError {
+   name?: string;
+   message?: string;
+   stack?: string;
+-  code?: string;
++  code?: string | undefined;
+ }
+ declare class RejectWithValue<Payload, RejectedMeta> {
+   readonly payload: Payload;
+@@ -974,3 +974,3 @@
+ };
+-type OverrideThunkApiConfigs<OldConfig, NewConfig> = Id<NewConfig & Omit<OldConfig, keyof NewConfig>>;
++type OverrideThunkApiConfigs<OldConfig, NewConfig> = NewConfig & Omit<OldConfig, keyof NewConfig>;
+ type CreateAsyncThunkFunction<CurriedThunkApiConfig extends AsyncThunkConfig> = {

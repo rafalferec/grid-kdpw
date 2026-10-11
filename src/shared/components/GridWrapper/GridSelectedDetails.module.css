@@ -1,0 +1,24 @@
+.panel {
+  margin-bottom: var(--kendo-spacing-4);
+  padding: var(--kendo-spacing-4);
+  border: 1px solid var(--kendo-color-border);
+  border-radius: var(--kendo-border-radius-md);
+  background-color: var(--kendo-color-app-surface);
+}
+
+.heading {
+  margin: 0 0 var(--kendo-spacing-3);
+  font-size: var(--kendo-font-size-lg);
+}
+
+.content {
+  max-height: 20rem;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.content:focus-visible {
+  outline: 2px solid var(--kendo-color-on-app-surface);
+  outline-offset: 2px;
+}
+

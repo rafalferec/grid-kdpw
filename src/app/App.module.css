@@ -1,0 +1,64 @@
+.shell {
+  box-sizing: border-box;
+  max-width: var(--app-shell-max-width);
+  margin-inline: auto;
+  padding: var(--kendo-spacing-4);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kendo-spacing-4);
+  padding-block: var(--kendo-spacing-4);
+}
+
+.brand {
+  margin: 0;
+  font-size: var(--kendo-font-size-xl);
+  font-weight: var(--kendo-font-weight-bold);
+}
+
+.main {
+  padding: var(--kendo-spacing-6);
+  background-color: var(--kendo-color-app-surface);
+  border: 1px solid var(--kendo-color-border);
+  border-radius: var(--kendo-border-radius-xl);
+  box-shadow: var(--kendo-elevation-1);
+  overflow-wrap: anywhere;
+}
+
+.main h1 {
+  margin-block: 0 var(--kendo-spacing-4);
+  font-size: 1.5rem;
+}
+
+.main > a {
+  color: var(--kendo-color-on-app-surface);
+  text-underline-offset: 0.2em;
+}
+
+.skipLink {
+  position: absolute;
+  top: var(--kendo-spacing-2);
+  left: var(--kendo-spacing-2);
+  z-index: 10;
+  transform: translateY(-200%);
+  padding: var(--kendo-spacing-3);
+  background-color: var(--kendo-color-app-surface);
+  color: var(--kendo-color-on-app-surface);
+  border: 1px solid var(--kendo-color-border);
+  border-radius: var(--kendo-border-radius-md);
+}
+
+.skipLink:focus {
+  transform: translateY(0);
+}
+
+.skipLink:focus-visible,
+.main:focus-visible,
+.main > a:focus-visible {
+  outline: 2px solid var(--kendo-color-on-app-surface);
+  outline-offset: 2px;
+}

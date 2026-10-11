@@ -1,0 +1,20 @@
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--kendo-spacing-4);
+  margin: 0;
+}
+
+.field {
+  min-width: 0;
+}
+
+.field dt {
+  font-weight: var(--kendo-font-weight-bold);
+}
+
+.field dd {
+  margin: var(--kendo-spacing-1) 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
