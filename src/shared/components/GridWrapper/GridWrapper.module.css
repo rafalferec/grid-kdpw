@@ -221,3 +221,15 @@
         padding-inline: 12px;
     }
 }
+
+.wrapper :global(.rowSuccess td) {
+
+    background-color: #e8f5e9;
+  
+  }
+  
+  .wrapper :global(.rowDanger td) {
+  
+    background-color: #ffebee;
+  
+  }

@@ -8,6 +8,7 @@ import type {
   GridPageChangeEvent,
   GridFilterChangeEvent,
   GridSelectionChangeEvent,
+  GridCustomRowProps,
 } from "@progress/kendo-react-grid";
 
 import { LoadingOverlay } from "@/shared/components/LoadingOverlay/LoadingOverlay";
@@ -31,11 +32,29 @@ export function GridWrapper<T>({
   selectedId,
   onSelectionChange,
   onRefresh,
+  rowClassName
 }: GridWrapperProps<T>) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [displayedId, setDisplayedId] = useState<string | number | null>(null);
   const detailsId = useId();
   const displayedItem = data.find((item) => item[dataItemKey] === displayedId);
+
+  const CustomRow = (props: GridCustomRowProps) => {
+    const { trProps, dataItem, children } = props;
+  
+    const customClass = rowClassName?.(dataItem as T);
+  
+    return (
+      <tr
+        {...trProps}
+        className={[trProps?.className, customClass]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        {children}
+      </tr>
+    );
+  };
 
   const handleShowSelected = (id: string | number) => {
     onSelectionChange?.(id);
@@ -91,6 +110,7 @@ export function GridWrapper<T>({
       >
         <Grid
           data={data}
+          rows={{ data: CustomRow }}
           dataItemKey={dataItemKey}
           selectable={{
             enabled: Boolean(onSelectionChange),
@@ -138,7 +158,7 @@ export function GridWrapper<T>({
             />
           ))}
           <KendoGridColumn
-            title="Wyświetl dane"
+            title="Akcje"
             filterable={false}
             sortable={false}
             cells={{ data: GridRowActionCell }}
