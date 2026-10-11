@@ -32,4 +32,5 @@ export interface GridWrapperProps<T> {
   onSelectionChange?: (id: string | number) => void;
   detail?: ComponentType<GridDetailRowProps>;
   onRefresh?: () => void;
+  rowClassName?: (item: T) => string;
 }

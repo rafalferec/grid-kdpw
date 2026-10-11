@@ -57,6 +57,18 @@ export function OrdersPage() {
         }),
     });
 
+  const getRowClassName = (order: Order): string => {
+    switch (order.status) {
+      case "paid":
+      case "shipped":
+        return "rowSuccess";
+      case "cancelled":
+        return "rowDanger";
+      default:
+        return "";
+    }
+  };
+
   const handlePageChange = (nextPage: number, nextPageSize: number) => {
     if (nextPageSize !== pageSize) {
       setPageSize(nextPageSize);
@@ -106,6 +118,7 @@ export function OrdersPage() {
         onSelectionChange={setSelectedId}
         detail={OrderDetails}
         onRefresh={refetch}
+        rowClassName={getRowClassName}
       />
     </section>
   );
