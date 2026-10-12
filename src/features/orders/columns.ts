@@ -23,7 +23,6 @@ export const columns: GridColumn<Order>[] = [
     field: "total",
     title: "Kwota",
     filter: true,
-    filterType: "numeric",
   },
   {
     field: "currency",

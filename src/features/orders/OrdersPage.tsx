@@ -1,35 +1,20 @@
 import { useState } from "react";
 
-import type {
-  CompositeFilterDescriptor,
-  FilterDescriptor,
-} from "@progress/kendo-data-query";
+import type { CompositeFilterDescriptor } from "@progress/kendo-data-query";
 
 import { GridWrapper } from "@/shared/components/GridWrapper/GridWrapper";
 import { useDebounce } from "@/shared/hooks/useDebounce";
+import { buildLikeFilters } from "@/shared/api/buildLikeFilters";
 
 import { useGetOrdersQuery } from "./api/ordersApi";
 import type { Order } from "./types/order.types";
 import { columns } from "./columns";
-import { OrderDetails } from "./OrderDetails";
+import { RecordDetails } from "@/shared/components/RecordDetails/RecordDetails";
 
 const initialFilter: CompositeFilterDescriptor = {
   logic: "and",
   filters: [],
 };
-
-function getFilterValue(
-  filter: CompositeFilterDescriptor | null,
-  field: string,
-): string {
-  if (!filter) return "";
-
-  const descriptor = filter.filters.find(
-    (item): item is FilterDescriptor => "field" in item && item.field === field,
-  );
-
-  return descriptor?.value == null ? "" : String(descriptor.value);
-}
 
 export function OrdersPage() {
   const [page, setPage] = useState(1);
@@ -38,24 +23,19 @@ export function OrdersPage() {
   const [filter, setFilter] = useState(initialFilter);
 
   const debouncedFilter = useDebounce(filter, 400);
-
-  const number = getFilterValue(debouncedFilter, "number");
-  const status = getFilterValue(debouncedFilter, "status");
-  const total = getFilterValue(debouncedFilter, "total");
-  const currency = getFilterValue(debouncedFilter, "currency");
+  const isFilterPending = filter !== debouncedFilter;
 
   const { currentData, isLoading, isFetching, isError, refetch } =
-    useGetOrdersQuery({
-      page,
-      limit: pageSize,
-      ...(number && { number_like: number }),
-      ...(status && { status_like: status }),
-      ...(currency && { currency }),
-      ...(total.trim() !== "" &&
-        Number.isFinite(Number(total)) && {
-          total_like: Number(total),
-        }),
-    });
+    useGetOrdersQuery(
+      {
+        page,
+        limit: pageSize,
+        ...buildLikeFilters<Order>(debouncedFilter, columns),
+      },
+      { skip: isFilterPending },
+    );
+
+  const excludedFields = columns.map((column) => column.field);
 
   const getRowClassName = (order: Order): string => {
     switch (order.status) {
@@ -104,7 +84,7 @@ export function OrdersPage() {
       <GridWrapper<Order>
         data={currentData?.data ?? []}
         columns={columns}
-        loading={isLoading || isFetching || filter !== debouncedFilter}
+        loading={isLoading || isFetching || isFilterPending}
         pagination={{
           page,
           pageSize,
@@ -116,7 +96,13 @@ export function OrdersPage() {
         dataItemKey="id"
         selectedId={selectedId}
         onSelectionChange={setSelectedId}
-        detail={OrderDetails}
+        detail={(props) => (
+          <RecordDetails
+            dataItem={props.dataItem}
+            title={`Produkt ${props.dataItem.id}`}
+            excludedFields={excludedFields}
+          />
+        )}
         onRefresh={refetch}
         rowClassName={getRowClassName}
       />

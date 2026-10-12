@@ -17,9 +17,7 @@ import type { GridWrapperProps } from "./GridWrapper.types";
 import styles from "./GridWrapper.module.css";
 
 import { GridSelectedDetails } from "./GridSelectedDetails";
-import { GridRowActions, GridRowActionCell } from "./GridRowActions";
-import { GridFilterContext } from "./GridFilterContext";
-import { NumericRangeFilterCell } from "./NumericRangeFilterCell";
+import { TextFilterCell } from "./TextFilterCell";
 
 const GridRowStyleContext = createContext<(item: unknown) => string | undefined>(() => undefined);
 
@@ -50,17 +48,25 @@ export function GridWrapper<T>({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [displayedId, setDisplayedId] = useState<string | number | null>(null);
   const detailsId = useId();
-  const displayedItem = data.find((item) => item[dataItemKey] === displayedId);
+
+  const selectedItem = selectedId == null
+    ? undefined
+    : data.find((item) => item[dataItemKey] === selectedId);
+
+  const displayedItem = displayedId === null
+    ? undefined
+    : data.find((item) => item[dataItemKey] === displayedId);
 
   const getRowClassName = (dataItem: unknown) => {
     const item = data.find((record) => record === dataItem);
     return item !== undefined ? rowClassName?.(item) : undefined;
   };
 
-  const handleShowSelected = (id: string | number) => {
-    onSelectionChange?.(id);
-    setDisplayedId((currentId) => currentId === id ? null : id);
+  const handleShowSelected = () => {
+    if (loading || selectedItem === undefined) return;
+    setDisplayedId(selectedId ?? null);
   };
+
   const handlePageChange = (event: GridPageChangeEvent) => {
     const { skip, take } = event.page;
     pagination.onPageChange(Math.floor(skip / take) + 1, take);
@@ -71,15 +77,22 @@ export function GridWrapper<T>({
   };
 
   const handleSelectionChange = (event: GridSelectionChangeEvent) => {
+    if (loading) return;
+
     const selectedKey = Object.keys(event.select).find(
-      (key) => event.select[key],
+      (key) => event.select[key] === true,
     );
 
-    const selectedItem = data.find(
+    if (selectedKey === undefined) {
+      onSelectionChange?.(null);
+      return;
+    }
+
+    const nextSelectedItem = data.find(
       (item) => String(item[dataItemKey]) === selectedKey,
     );
 
-    const id: unknown = selectedItem?.[dataItemKey];
+    const id: unknown = nextSelectedItem?.[dataItemKey];
 
     if (typeof id === "string" || typeof id === "number") {
       onSelectionChange?.(id);
@@ -94,6 +107,15 @@ export function GridWrapper<T>({
         <button
           type="button"
           className={styles.actionButton}
+          onClick={handleShowSelected}
+          disabled={loading || selectedItem === undefined}
+          aria-controls={displayedItem !== undefined ? detailsId : undefined}
+        >
+          Wyświetl zaznaczony
+        </button>
+        <button
+          type="button"
+          className={styles.actionButton}
           onClick={onRefresh}
           disabled={loading || !onRefresh}
         >
@@ -101,78 +123,61 @@ export function GridWrapper<T>({
         </button>
       </div>
 
-      {displayedItem && <GridSelectedDetails data={displayedItem} id={detailsId} />}
+      {displayedItem && <GridSelectedDetails data={displayedItem} id={detailsId}  onClose={() => setDisplayedId(null)} />}
       <GridRowStyleContext value={getRowClassName}>
-        <GridFilterContext value={{
-          filter: filter ?? { logic: "and", filters: [] },
-          onChange: onFilterChange,
-          titles: Object.fromEntries(columns.map((column) => [column.field, column.title])),
-        }}>
-          <GridRowActions
-            dataItemKey={dataItemKey}
-            displayedId={displayedItem != null ? displayedId : null}
-            detailsId={detailsId}
-            loading={loading}
-            onToggle={handleShowSelected}
-          >
-            <Grid
-              data={data}
-              rows={{ data: GridDataRow }}
-              dataItemKey={dataItemKey}
-              selectable={{
-                enabled: Boolean(onSelectionChange),
-                mode: "single",
-              }}
-              select={selectedId == null ? {} : { [String(selectedId)]: true }}
-              onSelectionChange={handleSelectionChange}
-              filterable={Boolean(onFilterChange)}
-              {...(filter !== undefined ? { filter } : {})}
-              onFilterChange={handleFilterChange}
-              pageable={{
-                type: "numeric",
-                buttonCount: 10,
-                previousNext: true,
-                info: false,
-                pageSizes: false,
-                responsive: false,
-              }}
-              skip={(pagination.page - 1) * pagination.pageSize}
-              take={pagination.pageSize}
-              total={pagination.total}
-              onPageChange={handlePageChange}
-              {...(detail ? { detail } : {})}
-              detailExpand={detailExpand}
-              onDetailExpandChange={(event) => {
-                const expandedKey = Object.keys(event.detailExpand).find(
-                  (key) => event.detailExpand[key] && key !== expandedId,
-                );
-                setExpandedId(expandedKey ?? null);
-              }}
-              showLoader={loading}
-              loader={<LoadingOverlay message={message} />}
-            >
-              {columns.map((column) => (
-                <KendoGridColumn
-                  key={column.field}
-                  field={column.field}
-                  title={column.title}
-                  {...(column.width !== undefined ? { width: column.width } : {})}
-                  filter={column.filterType === "range" ? "numeric" : column.filterType ?? "text"}
-                  filterable={column.filter === true}
-                  {...(column.filterCell || column.filterType === "range"
-                    ? { cells: { filterCell: column.filterCell ?? NumericRangeFilterCell } }
-                    : {})}
-                />
-              ))}
-              <KendoGridColumn
-                title="Akcje"
-                filterable={false}
-                sortable={false}
-                cells={{ data: GridRowActionCell }}
-              />
-            </Grid>
-          </GridRowActions>
-        </GridFilterContext>
+        <Grid
+          data={data}
+          rows={{ data: GridDataRow }}
+          dataItemKey={dataItemKey}
+          navigatable
+          selectable={{
+            enabled: Boolean(onSelectionChange),
+            mode: "single",
+            cell: false,
+            drag: false,
+          }}
+          select={selectedId == null ? {} : { [String(selectedId)]: true }}
+          onSelectionChange={handleSelectionChange}
+          filterable={Boolean(onFilterChange)}
+          {...(filter !== undefined ? { filter } : {})}
+          onFilterChange={handleFilterChange}
+          pageable={{
+            type: "numeric",
+            buttonCount: 10,
+            previousNext: true,
+            info: false,
+            pageSizes: false,
+            responsive: false,
+          }}
+          skip={(pagination.page - 1) * pagination.pageSize}
+          take={pagination.pageSize}
+          total={pagination.total}
+          onPageChange={handlePageChange}
+          {...(detail ? { detail } : {})}
+          detailExpand={detailExpand}
+          onDetailExpandChange={(event) => {
+            const expandedKey = Object.keys(event.detailExpand).find(
+              (key) => event.detailExpand[key] && key !== expandedId,
+            );
+            setExpandedId(expandedKey ?? null);
+          }}
+          showLoader={loading}
+          loader={<LoadingOverlay message={message} />}
+        >
+          {columns.map((column) => (
+            <KendoGridColumn
+              key={column.field}
+              field={column.field}
+              title={column.title}
+              {...(column.width !== undefined ? { width: column.width } : {})}
+              filter="text"
+              filterable={column.filter === true}
+              {...(column.filter === true
+                ? { cells: { filterCell: column.filterCell ?? TextFilterCell } }
+                : {})}
+            />
+          ))}
+        </Grid>
       </GridRowStyleContext>
     </div>
   );

@@ -1,3 +1,5 @@
+import type { ApiPaginationParams, LikeFilters } from '@/shared/api/api.types';
+
 export interface Product {
   id: number;
   name: string;
@@ -12,11 +14,4 @@ export interface Product {
   brand: string;
 }
 
-export interface ProductsQueryParams {
-  page: number;
-  limit: number;
-  name_like?: string;
-  category_id?: number;
-  price_gte?: number;
-  price_lte?: number;
-}
+export type ProductsQueryParams = ApiPaginationParams & LikeFilters<Product>;

@@ -29,27 +29,27 @@ test('łączy filtry po stronie serwera, zachowuje je przy paginacji i Refresh o
   await waitFor(() => expect(refresh).toBeEnabled(), { timeout: 3000 });
 
   const name = screen.getByRole('textbox', { name: 'name Filter' });
-  const minimum = screen.getByRole('spinbutton', { name: 'Cena od' });
-  const maximum = screen.getByRole('spinbutton', { name: 'Cena do' });
-  expect(screen.getAllByRole('textbox')).toHaveLength(1);
-  expect(screen.getAllByRole('spinbutton')).toHaveLength(2);
+  const sku = screen.getByRole('textbox', { name: 'sku Filter' });
+  const price = screen.getByRole('textbox', { name: 'price Filter' });
+  expect(screen.getAllByRole('textbox')).toHaveLength(6);
+  expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
 
   await user.type(name, 'Sonora');
-  fireEvent.change(minimum, { target: { value: '0' } });
-  fireEvent.change(maximum, { target: { value: '200.50' } });
+  fireEvent.change(sku, { target: { value: 'AUD' } });
+  fireEvent.change(price, { target: { value: '200.50' } });
   expect(refresh).toBeDisabled();
   await waitFor(() => {
     const params = requests.at(-1)?.searchParams;
     expect(params?.get('name_like')).toBe('Sonora');
-    expect(params?.get('price_gte')).toBe('0');
-    expect(params?.get('price_lte')).toBe('200.5');
+    expect(params?.get('sku_like')).toBe('AUD');
+    expect(params?.get('price_like')).toBe('200.50');
     expect(refresh).toBeEnabled();
   }, { timeout: 3000 });
 
   await user.click(screen.getByRole('button', { name: 'Go to the next page' }));
   await waitFor(() => {
     expect(requests.at(-1)?.searchParams.get('page')).toBe('2');
-    expect(requests.at(-1)?.searchParams.get('price_lte')).toBe('200.5');
+    expect(requests.at(-1)?.searchParams.get('price_like')).toBe('200.50');
     expect(refresh).toBeEnabled();
   }, { timeout: 3000 });
   const previousRequest = requests.at(-1)?.href;
@@ -61,26 +61,26 @@ test('łączy filtry po stronie serwera, zachowuje je przy paginacji i Refresh o
     expect(refresh).toBeEnabled();
   }, { timeout: 3000 });
 
-  fireEvent.change(maximum, { target: { value: '150' } });
+  fireEvent.change(price, { target: { value: '150' } });
   await waitFor(() => {
     expect(requests.at(-1)?.searchParams.get('page')).toBe('1');
-    expect(requests.at(-1)?.searchParams.get('price_lte')).toBe('150');
+    expect(requests.at(-1)?.searchParams.get('price_like')).toBe('150');
     expect(refresh).toBeEnabled();
   }, { timeout: 3000 });
 
   await user.clear(name);
-  fireEvent.change(minimum, { target: { value: '' } });
+  fireEvent.change(sku, { target: { value: '' } });
   await waitFor(() => {
     expect(requests.at(-1)?.searchParams.has('name_like')).toBe(false);
-    expect(requests.at(-1)?.searchParams.has('price_gte')).toBe(false);
-    expect(requests.at(-1)?.searchParams.get('price_lte')).toBe('150');
+    expect(requests.at(-1)?.searchParams.has('sku_like')).toBe(false);
+    expect(requests.at(-1)?.searchParams.get('price_like')).toBe('150');
     expect(refresh).toBeEnabled();
   }, { timeout: 3000 });
-  fireEvent.change(maximum, { target: { value: '' } });
+  fireEvent.change(price, { target: { value: '' } });
   await waitFor(() => expect(refresh).toBeEnabled(), { timeout: 3000 });
   await user.click(refresh);
   await waitFor(() => {
-    expect(requests.at(-1)?.searchParams.has('price_lte')).toBe(false);
+    expect(requests.at(-1)?.searchParams.has('price_like')).toBe(false);
     expect(refresh).toBeEnabled();
   }, { timeout: 3000 });
 }, 15000);

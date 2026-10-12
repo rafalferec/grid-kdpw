@@ -53,7 +53,7 @@ test('Refresh ponawia żądanie HTTP z aktualnymi filtrami i numerem strony', as
   await user.type(screen.getByRole('textbox', { name: 'currency Filter' }), 'USD');
   await waitFor(() => {
     expect(requests.at(-1)?.searchParams.get('number_like')).toBe('SH-10');
-    expect(requests.at(-1)?.searchParams.get('currency')).toBe('USD');
+    expect(requests.at(-1)?.searchParams.get('currency_like')).toBe('USD');
     expect(refresh).toBeEnabled();
   }, { timeout: 3000 });
 

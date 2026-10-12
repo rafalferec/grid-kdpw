@@ -17,6 +17,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@progress/kendo-react-animation": "16.2.0",
     "@progress/kendo-react-grid": "16.2.0",
     "@progress/kendo-theme-default": "14.6.1",
     "@reduxjs/toolkit": "2.13.0",
