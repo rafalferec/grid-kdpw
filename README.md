@@ -62,7 +62,9 @@ obsługuje odpowiadający mu parametr. Filtr jest włączany jawnie przez
 1. Wybierz widok „Produkty” lub „Zamówienia”.
 2. Wpisz wartość pod nagłówkiem kolumny albo wybierz opcję z dropdownu.
    Zmiana filtra wraca na pierwszą stronę. Puste wartości usuwają dany filtr.
-3. Przejdź na kolejną stronę — aktywne filtry pozostają zachowane.
+3. Zmień stronę paginacji w obrębie bieżącego widoku —
+   aktywne filtry pozostają zachowane i są uwzględniane
+   w kolejnym zapytaniu do API.
 4. Zaznacz wiersz i kliknij „Wyświetl zaznaczony”, aby pokazać jego dane
    nad tabelą. Przycisk „Zamknij” ukrywa panel i przywraca fokus na przycisk
    wyświetlania rekordu.
