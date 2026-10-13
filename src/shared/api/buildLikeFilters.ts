@@ -1,11 +1,11 @@
 import type { CompositeFilterDescriptor } from '@progress/kendo-data-query';
 
 import type { GridColumn } from '@/shared/components/GridWrapper/GridWrapper.types';
-import { findFilter } from '@/shared/components/GridWrapper/filterDescriptors';
+import { findFilter } from '@/shared/components/GridWrapper/filters/filterDescriptors';
 import type { LikeFilters } from './api.types';
 
 export function buildLikeFilters<T>(
-  filter: CompositeFilterDescriptor,
+  filter: CompositeFilterDescriptor | null | undefined,
   columns: readonly Pick<GridColumn<T>, 'field' | 'filter'>[],
 ): LikeFilters<T> {
   const params: LikeFilters<T> = {};

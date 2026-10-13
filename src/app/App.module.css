@@ -21,6 +21,7 @@
 }
 
 .main {
+  min-width: 0;
   padding: var(--kendo-spacing-6);
   background-color: var(--kendo-color-app-surface);
   border: 1px solid var(--kendo-color-border);
@@ -32,6 +33,16 @@
 .main h1 {
   margin-block: 0 var(--kendo-spacing-4);
   font-size: 1.5rem;
+}
+
+@media (max-width: 48rem) {
+  .shell {
+    padding: var(--kendo-spacing-2);
+  }
+
+  .main {
+    padding: var(--kendo-spacing-3);
+  }
 }
 
 .main > a {

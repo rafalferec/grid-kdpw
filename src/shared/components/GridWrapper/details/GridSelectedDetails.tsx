@@ -1,6 +1,6 @@
 import { RecordFields } from '@/shared/components/RecordFields/RecordFields';
 import styles from './GridSelectedDetails.module.css';
-import gridStyles from './GridWrapper.module.css';
+import gridStyles from '../GridWrapper.module.css';
 
 interface GridSelectedDetailsProps<T> {
   data: T;

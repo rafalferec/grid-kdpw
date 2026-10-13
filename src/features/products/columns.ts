@@ -1,7 +1,7 @@
 import type { GridColumn } from "@/shared/components/GridWrapper/GridWrapper.types";
 
-import type { Product } from "./types/product.types";
-import { createDropdownFilter } from "@/shared/components/GridWrapper/DropdownFilterCell/createDropdownFilter";
+import { PRODUCT_STATUSES, type Product } from "./types/product.types";
+import { createDropdownFilter } from "@/shared/components/GridWrapper/filters/DropdownFilterCell/createDropdownFilter";
 
 export const columns: GridColumn<Product>[] = [
   {
@@ -41,6 +41,13 @@ export const columns: GridColumn<Product>[] = [
       "true",
       "false",
     ]),
+  },
+  {
+    field: "status",
+    title: "Status",
+    width: 120,
+    filter: true,
+    filterCell: createDropdownFilter([...PRODUCT_STATUSES]),
   },
   {
     field: "rating",

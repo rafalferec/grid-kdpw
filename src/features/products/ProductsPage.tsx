@@ -47,6 +47,10 @@ export function ProductsPage() {
     setPage(nextPage);
   };
 
+  const getRowClassName = (product: Product): string => {
+    return product.in_stock ? 'rowSuccess' : "rowDanger"
+  };
+
   if (isError) {
     return (
       <section>
@@ -87,6 +91,7 @@ export function ProductsPage() {
             excludedFields={excludedFields}
           />
         )}
+        rowClassName={getRowClassName}
       />
     </section>
   );

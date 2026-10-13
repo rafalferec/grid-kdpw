@@ -17,6 +17,12 @@ const columns: GridColumn<Sensor>[] = [
   { field: 'humidity', title: 'Wilgotność', filter: true },
 ];
 
+test('wyczyszczenie filtra usuwa parametry również dla null zwracanego przez grid', () => {
+  expect(buildLikeFilters<Sensor>(null, columns)).toEqual({});
+  expect(buildLikeFilters<Sensor>(undefined, columns)).toEqual({});
+  expect(buildLikeFilters<Sensor>({ logic: 'and', filters: [] }, columns)).toEqual({});
+});
+
 test('mapuje tylko aktywne kolumny, pomija puste i niepoprawne wartości oraz nie zmienia zapisu liczb', () => {
   expect(buildLikeFilters<Sensor>({ logic: 'and', filters: [
     { field: 'location', operator: 'contains', value: '  ' },

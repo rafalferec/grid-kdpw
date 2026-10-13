@@ -28,7 +28,7 @@ function TestDetails({ dataItem }: { dataItem: TestRecord }) {
   return <p>Szczegóły {dataItem.code}</p>;
 }
 
-function SelectableGrid(props: GridWrapperProps<TestRecord>) {
+function SelectableGrid<T>(props: GridWrapperProps<T>) {
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
 
   return <GridWrapper
@@ -49,9 +49,15 @@ test('kliknięcie wiersza zaznacza go, a przycisk osobno wyświetla wybrany reko
   const showSelected = screen.getByRole('button', { name: 'Wyświetl zaznaczony' });
   const firstRow = screen.getByRole('row', { name: 'Pierwszy rekord' });
   const secondRow = screen.getByRole('row', { name: 'Drugi rekord' });
+  const elementFromPoint = vi.spyOn(document, 'elementFromPoint');
+  const clickRow = async (row: HTMLElement) => {
+    const cell = within(row).getByRole('gridcell');
+    elementFromPoint.mockReturnValue(cell);
+    await user.click(cell);
+  };
   expect(showSelected).toBeDisabled();
 
-  await user.click(within(firstRow).getByText('Pierwszy rekord'));
+  await clickRow(firstRow);
   expect(firstRow).toHaveAttribute('aria-selected', 'true');
   expect(showSelected).toBeEnabled();
   expect(props.onSelectionChange).toHaveBeenLastCalledWith('alpha');
@@ -65,15 +71,15 @@ test('kliknięcie wiersza zaznacza go, a przycisk osobno wyświetla wybrany reko
   expect(props.onSelectionChange).toHaveBeenCalledTimes(callsBeforeDisplay);
   expect(showSelected).toHaveFocus();
 
-  await user.click(within(secondRow).getByText('Drugi rekord'));
+  await clickRow(secondRow);
   expect(secondRow).toHaveAttribute('aria-selected', 'true');
   expect(firstRow).toHaveAttribute('aria-selected', 'false');
   expect(props.onSelectionChange).toHaveBeenLastCalledWith('beta');
   expect(screen.queryByRole('region', { name: 'Wyświetlony rekord' })).not.toBeInTheDocument();
 
-  await user.click(within(firstRow).getByText('Pierwszy rekord'));
+  await clickRow(firstRow);
   expect(screen.queryByRole('region', { name: 'Wyświetlony rekord' })).not.toBeInTheDocument();
-  await user.click(within(secondRow).getByText('Drugi rekord'));
+  await clickRow(secondRow);
   await user.click(showSelected);
   details = screen.getByRole('region', { name: 'Wyświetlony rekord' });
   expect(within(details).getByText('Drugi rekord')).toBeInTheDocument();
@@ -86,6 +92,54 @@ test('kliknięcie wiersza zaznacza go, a przycisk osobno wyświetla wybrany reko
   expect(showSelected).toHaveFocus();
   await user.click(showSelected);
   expect(within(screen.getByRole('region', { name: 'Wyświetlony rekord' })).getByText('Drugi rekord')).toBeInTheDocument();
+});
+
+test('zaznacza klawiaturą rekord z liczbowym ID równym zero', async () => {
+  const user = userEvent.setup();
+  const onSelectionChange = vi.fn<(id: string | number | null) => void>();
+  render(<SelectableGrid
+    data={[{ id: 0, name: 'Rekord zero' }]}
+    columns={[{ field: 'name', title: 'Nazwa' }]}
+    dataItemKey="id"
+    pagination={{ page: 1, pageSize: 10, total: 1, onPageChange: vi.fn() }}
+    onSelectionChange={onSelectionChange}
+  />);
+  const row = screen.getByRole('row', { name: 'Rekord zero' });
+  const cell = within(row).getByRole('gridcell');
+  cell.focus();
+  fireEvent.keyDown(cell, { key: ' ', code: 'Space', keyCode: 32 });
+
+  expect(onSelectionChange).toHaveBeenLastCalledWith(0);
+  expect(row).toHaveAttribute('aria-selected', 'true');
+  await user.click(screen.getByRole('button', { name: 'Wyświetl zaznaczony' }));
+  expect(within(screen.getByRole('region', { name: 'Wyświetlony rekord' }))
+    .getByText('Rekord zero')).toBeInTheDocument();
+});
+
+test('loader znajduje się nad wierszami i blokuje akcje podczas odświeżania', async () => {
+  const user = userEvent.setup();
+  const props = { ...createProps(), selectedId: 'alpha', onRefresh: vi.fn() };
+  const { container, rerender } = render(<GridWrapper {...props} loading message="Pobieranie rekordów" />);
+  const overlay = screen.getByText('Pobieranie rekordów').closest<HTMLElement>('[role="status"]');
+  expect(overlay).toBeInTheDocument();
+  expect(container.querySelector('.k-grid-container')).toContainElement(overlay);
+  expect(container.querySelector('.k-grid-header')).not.toContainElement(overlay);
+  expect(container.querySelector('[aria-busy]')).toHaveAttribute('aria-busy', 'true');
+  const refresh = screen.getByRole('button', { name: 'Refresh' });
+  expect(refresh).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Wyświetl zaznaczony' })).toBeDisabled();
+  const cell = screen.getByRole('gridcell', { name: 'Drugi rekord' });
+  vi.spyOn(document, 'elementFromPoint').mockReturnValue(cell);
+  await user.click(cell);
+  await user.click(refresh);
+  expect(props.onSelectionChange).not.toHaveBeenCalled();
+  expect(props.onRefresh).not.toHaveBeenCalled();
+
+  rerender(<GridWrapper {...props} loading={false} message="Pobieranie rekordów" />);
+  expect(screen.queryByText('Pobieranie rekordów')).not.toBeInTheDocument();
+  expect(container.querySelector('[aria-busy]')).toHaveAttribute('aria-busy', 'false');
+  expect(refresh).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Wyświetl zaznaczony' })).toBeEnabled();
 });
 
 test('korzysta z aktualnych danych i ukrywa szczegóły rekordu usuniętego z bieżącej strony', async () => {

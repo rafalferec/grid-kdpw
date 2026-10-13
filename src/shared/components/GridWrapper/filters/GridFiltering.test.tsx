@@ -3,7 +3,7 @@ import type { CompositeFilterDescriptor } from '@progress/kendo-data-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, test } from 'vitest';
 
-import { GridWrapper } from './GridWrapper';
+import { GridWrapper } from '../GridWrapper';
 import { findFilter } from './filterDescriptors';
 
 test('konfiguracja kolumn włącza filtry tekstowe także dla liczb bez filtrowania lokalnego', () => {

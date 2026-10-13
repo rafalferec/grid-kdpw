@@ -1,10 +1,27 @@
+import type {
+  ApiPaginationParams,
+  LikeFilters,
+} from '@/shared/api/api.types';
+
+export interface ShippingAddress {
+  line1: string;
+  city: string;
+  region: string;
+  postal_code: string;
+  country: string;
+}
+
+export type OrderStatus =
+  | 'pending'
+  | 'paid'
+  | 'cancelled'
+  | 'shipped';
+
 export interface Order {
   id: number;
-  created_at: string;
-  updated_at: string;
   number: string;
   customer_id: number;
-  status: 'pending' | 'paid' | 'cancelled' | 'shipped';
+  status: OrderStatus;
   subtotal: number;
   shipping: number;
   tax: number;
@@ -12,15 +29,17 @@ export interface Order {
   total: number;
   currency: string;
   payment_method: string;
-  shipping_address: string;
+  paid_at: string | null;
+  shipping_address: ShippingAddress;
   shipping_method: string;
   tracking_number: string | null;
-  placed_at: string;
-  paid_at: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
+  created_at: string;
+  updated_at: string;
+  placed_at: string;
   notes: string | null;
 }
 
-export type OrdersQueryParams = ApiPaginationParams & LikeFilters<Order>;
-import type { ApiPaginationParams, LikeFilters } from '@/shared/api/api.types';
+export type OrdersQueryParams =
+  ApiPaginationParams & LikeFilters<Order>;

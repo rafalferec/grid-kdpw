@@ -67,7 +67,7 @@ export function OrdersPage() {
   if (isError) {
     return (
       <section>
-        <h1>Orders</h1>
+        <h1>Zamówienia</h1>
 
         <p role="alert">Nie udało się pobrać zamówień.</p>
 
@@ -80,7 +80,7 @@ export function OrdersPage() {
 
   return (
     <section>
-      <h1>Orders</h1>
+      <h1>Zamówienia</h1>
       <GridWrapper<Order>
         data={currentData?.data ?? []}
         columns={columns}

@@ -1,6 +1,6 @@
 import type { GridColumn } from "@/shared/components/GridWrapper/GridWrapper.types";
 import type { Order } from "./types/order.types";
-import { createDropdownFilter } from "@/shared/components/GridWrapper/DropdownFilterCell/createDropdownFilter";
+import { createDropdownFilter } from "@/shared/components/GridWrapper/filters/DropdownFilterCell/createDropdownFilter";
 
 export const columns: GridColumn<Order>[] = [
   {

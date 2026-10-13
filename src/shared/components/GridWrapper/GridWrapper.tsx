@@ -1,4 +1,6 @@
-import { createContext, useContext, useId, useState } from "react";
+import { createContext, useCallback, useContext, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import type { CSSProperties } from "react";
 import {
   Grid,
   GridColumn as KendoGridColumn,
@@ -16,15 +18,17 @@ import { LoadingOverlay } from "@/shared/components/LoadingOverlay/LoadingOverla
 import type { GridWrapperProps } from "./GridWrapper.types";
 import styles from "./GridWrapper.module.css";
 
-import { GridSelectedDetails } from "./GridSelectedDetails";
-import { TextFilterCell } from "./TextFilterCell";
+import { GridSelectedDetails } from "./details/GridSelectedDetails";
+import { TextFilterCell } from "./filters/TextFilterCell";
 
-const GridRowStyleContext = createContext<(item: unknown) => string | undefined>(() => undefined);
+const GridRowStyleContext = createContext<(dataIndex: number) => string | undefined>(() => undefined);
+const DEFAULT_COLUMN_MIN_WIDTH = 200;
+const DETAIL_COLUMN_WIDTH = 32;
 
-function GridDataRow({ trProps, dataItem, children }: GridCustomRowProps) {
+function GridDataRow({ trProps, dataIndex, children }: GridCustomRowProps) {
   const getClassName = useContext(GridRowStyleContext);
   return (
-    <tr {...trProps} className={[trProps?.className, getClassName(dataItem)].filter(Boolean).join(" ")}>
+    <tr {...trProps} className={[trProps?.className, getClassName(dataIndex)].filter(Boolean).join(" ")}>
       {children}
     </tr>
   );
@@ -47,7 +51,14 @@ export function GridWrapper<T>({
 }: GridWrapperProps<T>) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [displayedId, setDisplayedId] = useState<string | number | null>(null);
+  const [loaderContainer, setLoaderContainer] = useState<HTMLElement | null>(null);
   const detailsId = useId();
+  const showSelectedButtonRef = useRef<HTMLButtonElement>(null);
+
+  const setWrapperRef = useCallback((element: HTMLDivElement | null) => {
+    // Slot loadera Kendo leży poza kontenerem wierszy; portal ogranicza nakładkę do danych.
+    setLoaderContainer(element?.querySelector<HTMLElement>(".k-grid-container") ?? null);
+  }, []);
 
   const selectedItem = selectedId == null
     ? undefined
@@ -57,8 +68,9 @@ export function GridWrapper<T>({
     ? undefined
     : data.find((item) => item[dataItemKey] === displayedId);
 
-  const getRowClassName = (dataItem: unknown) => {
-    const item = data.find((record) => record === dataItem);
+  const getRowClassName = (dataIndex: number) => {
+    // Przy paginacji serwerowej dataIndex wskazuje rekord na bieżącej stronie.
+    const item = data[dataIndex];
     return item !== undefined ? rowClassName?.(item) : undefined;
   };
 
@@ -67,13 +79,19 @@ export function GridWrapper<T>({
     setDisplayedId(selectedId ?? null);
   };
 
+  const handleCloseDetails = () => {
+    setDisplayedId(null);
+    showSelectedButtonRef.current?.focus();
+  };
+
   const handlePageChange = (event: GridPageChangeEvent) => {
     const { skip, take } = event.page;
     pagination.onPageChange(Math.floor(skip / take) + 1, take);
   };
 
   const handleFilterChange = (event: GridFilterChangeEvent) => {
-    onFilterChange?.(event.filter);
+    // Kendo może zwrócić null po usunięciu ostatniego warunku.
+    onFilterChange?.(event.filter ?? { logic: "and", filters: [] });
   };
 
   const handleSelectionChange = (event: GridSelectionChangeEvent) => {
@@ -84,6 +102,7 @@ export function GridWrapper<T>({
     );
 
     if (selectedKey === undefined) {
+      setDisplayedId(null);
       onSelectionChange?.(null);
       return;
     }
@@ -95,16 +114,26 @@ export function GridWrapper<T>({
     const id: unknown = nextSelectedItem?.[dataItemKey];
 
     if (typeof id === "string" || typeof id === "number") {
+      if (id !== selectedId) setDisplayedId(null);
       onSelectionChange?.(id);
     }
   };
 
   const detailExpand = expandedId == null ? {} : { [expandedId]: true };
+  // Chroni kolumny bez width przed ściśnięciem; nie przypisuje im stałej szerokości.
+  const tableMinWidth = columns.reduce(
+    (width, column) => width + (column.width ?? DEFAULT_COLUMN_MIN_WIDTH),
+    detail ? DETAIL_COLUMN_WIDTH : 0,
+  );
+  const gridStyle: CSSProperties & { "--grid-table-min-width": string } = {
+    "--grid-table-min-width": `${tableMinWidth}px`,
+  };
 
   return (
-    <div className={styles.wrapper} aria-busy={loading}>
+    <div ref={setWrapperRef} className={styles.wrapper} aria-busy={loading}>
       <div className={styles.actions}>
         <button
+          ref={showSelectedButtonRef}
           type="button"
           className={styles.actionButton}
           onClick={handleShowSelected}
@@ -123,9 +152,16 @@ export function GridWrapper<T>({
         </button>
       </div>
 
-      {displayedItem && <GridSelectedDetails data={displayedItem} id={detailsId}  onClose={() => setDisplayedId(null)} />}
+      {displayedItem && (
+        <GridSelectedDetails
+          data={displayedItem}
+          id={detailsId}
+          onClose={handleCloseDetails}
+        />
+      )}
       <GridRowStyleContext value={getRowClassName}>
         <Grid
+          style={gridStyle}
           data={data}
           rows={{ data: GridDataRow }}
           dataItemKey={dataItemKey}
@@ -147,7 +183,7 @@ export function GridWrapper<T>({
             previousNext: true,
             info: false,
             pageSizes: false,
-            responsive: false,
+            responsive: true,
           }}
           skip={(pagination.page - 1) * pagination.pageSize}
           take={pagination.pageSize}
@@ -162,7 +198,9 @@ export function GridWrapper<T>({
             setExpandedId(expandedKey ?? null);
           }}
           showLoader={loading}
-          loader={<LoadingOverlay message={message} />}
+          loader={loaderContainer
+            ? createPortal(<LoadingOverlay message={message} />, loaderContainer)
+            : null}
         >
           {columns.map((column) => (
             <KendoGridColumn
