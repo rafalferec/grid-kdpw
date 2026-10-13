@@ -3,7 +3,7 @@ import type {
   LikeFilters,
 } from '@/shared/api/api.types';
 
-export const PRODUCT_STATUSES = ['active', 'inactive'] as const;
+export const PRODUCT_STATUSES = ['active', 'inactive', 'archived'] as const;
 
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
 

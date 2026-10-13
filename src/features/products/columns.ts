@@ -45,7 +45,7 @@ export const columns: GridColumn<Product>[] = [
   {
     field: "status",
     title: "Status",
-    width: 120,
+    width: 160,
     filter: true,
     filterCell: createDropdownFilter([...PRODUCT_STATUSES]),
   },
