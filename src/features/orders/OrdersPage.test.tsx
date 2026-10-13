@@ -109,7 +109,6 @@ test('dropdown statusu wysyła status_like i usuwa go po wyborze Wszystkie', asy
   }, { timeout: 3000 });
   await user.click(screen.getByRole('combobox', { name: 'status Filter' }));
   await user.click(await screen.findByRole('option', { name: '(Wszystkie)' }));
-  // Po wyczyszczeniu RTK Query może wykorzystać wcześniejszy cache.
   await waitFor(() => expect(refresh).toBeEnabled(), { timeout: 3000 });
   await user.click(refresh);
   await waitFor(() => {

@@ -56,7 +56,6 @@ export function GridWrapper<T>({
   const showSelectedButtonRef = useRef<HTMLButtonElement>(null);
 
   const setWrapperRef = useCallback((element: HTMLDivElement | null) => {
-    // Slot loadera Kendo leży poza kontenerem wierszy; portal ogranicza nakładkę do danych.
     setLoaderContainer(element?.querySelector<HTMLElement>(".k-grid-container") ?? null);
   }, []);
 
@@ -69,7 +68,6 @@ export function GridWrapper<T>({
     : data.find((item) => item[dataItemKey] === displayedId);
 
   const getRowClassName = (dataIndex: number) => {
-    // Przy paginacji serwerowej dataIndex wskazuje rekord na bieżącej stronie.
     const item = data[dataIndex];
     return item !== undefined ? rowClassName?.(item) : undefined;
   };
@@ -90,7 +88,6 @@ export function GridWrapper<T>({
   };
 
   const handleFilterChange = (event: GridFilterChangeEvent) => {
-    // Kendo może zwrócić null po usunięciu ostatniego warunku.
     onFilterChange?.(event.filter ?? { logic: "and", filters: [] });
   };
 
