@@ -1,0 +1,8 @@
+.details {
+    padding: var(--kendo-spacing-4);
+  }
+  
+  .details h3 {
+    margin: 0 0 var(--kendo-spacing-4);
+  }
+  

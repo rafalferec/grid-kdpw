@@ -6,8 +6,17 @@
   background-color: var(--kendo-color-app-surface);
 }
 
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--kendo-spacing-3);
+  margin-bottom: var(--kendo-spacing-3);
+}
+
 .heading {
-  margin: 0 0 var(--kendo-spacing-3);
+  margin: 0;
   font-size: var(--kendo-font-size-lg);
 }
 
@@ -21,4 +30,3 @@
   outline: 2px solid var(--kendo-color-on-app-surface);
   outline-offset: 2px;
 }
-

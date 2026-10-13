@@ -1,4 +1,6 @@
-import { useId, useState } from "react";
+import { createContext, useCallback, useContext, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import type { CSSProperties } from "react";
 import {
   Grid,
   GridColumn as KendoGridColumn,
@@ -16,8 +18,21 @@ import { LoadingOverlay } from "@/shared/components/LoadingOverlay/LoadingOverla
 import type { GridWrapperProps } from "./GridWrapper.types";
 import styles from "./GridWrapper.module.css";
 
-import { GridSelectedDetails } from "./GridSelectedDetails";
-import { GridRowActions, GridRowActionCell } from "./GridRowActions";
+import { GridSelectedDetails } from "./details/GridSelectedDetails";
+import { TextFilterCell } from "./filters/TextFilterCell";
+
+const GridRowStyleContext = createContext<(dataIndex: number) => string | undefined>(() => undefined);
+const DEFAULT_COLUMN_MIN_WIDTH = 200;
+const DETAIL_COLUMN_WIDTH = 32;
+
+function GridDataRow({ trProps, dataIndex, children }: GridCustomRowProps) {
+  const getClassName = useContext(GridRowStyleContext);
+  return (
+    <tr {...trProps} className={[trProps?.className, getClassName(dataIndex)].filter(Boolean).join(" ")}>
+      {children}
+    </tr>
+  );
+}
 
 export function GridWrapper<T>({
   data,
@@ -32,64 +47,101 @@ export function GridWrapper<T>({
   selectedId,
   onSelectionChange,
   onRefresh,
-  rowClassName
+  rowClassName,
 }: GridWrapperProps<T>) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [displayedId, setDisplayedId] = useState<string | number | null>(null);
+  const [loaderContainer, setLoaderContainer] = useState<HTMLElement | null>(null);
   const detailsId = useId();
-  const displayedItem = data.find((item) => item[dataItemKey] === displayedId);
+  const showSelectedButtonRef = useRef<HTMLButtonElement>(null);
 
-  const CustomRow = (props: GridCustomRowProps) => {
-    const { trProps, dataItem, children } = props;
-  
-    const customClass = rowClassName?.(dataItem as T);
-  
-    return (
-      <tr
-        {...trProps}
-        className={[trProps?.className, customClass]
-          .filter(Boolean)
-          .join(" ")}
-      >
-        {children}
-      </tr>
-    );
+  const setWrapperRef = useCallback((element: HTMLDivElement | null) => {
+    // Slot loadera Kendo leży poza kontenerem wierszy; portal ogranicza nakładkę do danych.
+    setLoaderContainer(element?.querySelector<HTMLElement>(".k-grid-container") ?? null);
+  }, []);
+
+  const selectedItem = selectedId == null
+    ? undefined
+    : data.find((item) => item[dataItemKey] === selectedId);
+
+  const displayedItem = displayedId === null
+    ? undefined
+    : data.find((item) => item[dataItemKey] === displayedId);
+
+  const getRowClassName = (dataIndex: number) => {
+    // Przy paginacji serwerowej dataIndex wskazuje rekord na bieżącej stronie.
+    const item = data[dataIndex];
+    return item !== undefined ? rowClassName?.(item) : undefined;
   };
 
-  const handleShowSelected = (id: string | number) => {
-    onSelectionChange?.(id);
-    setDisplayedId((currentId) => currentId === id ? null : id);
+  const handleShowSelected = () => {
+    if (loading || selectedItem === undefined) return;
+    setDisplayedId(selectedId ?? null);
   };
+
+  const handleCloseDetails = () => {
+    setDisplayedId(null);
+    showSelectedButtonRef.current?.focus();
+  };
+
   const handlePageChange = (event: GridPageChangeEvent) => {
     const { skip, take } = event.page;
     pagination.onPageChange(Math.floor(skip / take) + 1, take);
   };
 
   const handleFilterChange = (event: GridFilterChangeEvent) => {
-    onFilterChange?.(event.filter);
+    // Kendo może zwrócić null po usunięciu ostatniego warunku.
+    onFilterChange?.(event.filter ?? { logic: "and", filters: [] });
   };
 
   const handleSelectionChange = (event: GridSelectionChangeEvent) => {
+    if (loading) return;
+
     const selectedKey = Object.keys(event.select).find(
-      (key) => event.select[key],
+      (key) => event.select[key] === true,
     );
 
-    const selectedItem = data.find(
+    if (selectedKey === undefined) {
+      setDisplayedId(null);
+      onSelectionChange?.(null);
+      return;
+    }
+
+    const nextSelectedItem = data.find(
       (item) => String(item[dataItemKey]) === selectedKey,
     );
 
-    const id: unknown = selectedItem?.[dataItemKey];
+    const id: unknown = nextSelectedItem?.[dataItemKey];
 
     if (typeof id === "string" || typeof id === "number") {
+      if (id !== selectedId) setDisplayedId(null);
       onSelectionChange?.(id);
     }
   };
 
   const detailExpand = expandedId == null ? {} : { [expandedId]: true };
+  // Chroni kolumny bez width przed ściśnięciem; nie przypisuje im stałej szerokości.
+  const tableMinWidth = columns.reduce(
+    (width, column) => width + (column.width ?? DEFAULT_COLUMN_MIN_WIDTH),
+    detail ? DETAIL_COLUMN_WIDTH : 0,
+  );
+  const gridStyle: CSSProperties & { "--grid-table-min-width": string } = {
+    "--grid-table-min-width": `${tableMinWidth}px`,
+  };
 
   return (
-    <div className={styles.wrapper} aria-busy={loading}>
+    <div ref={setWrapperRef} className={styles.wrapper} aria-busy={loading}>
       <div className={styles.actions}>
+        <button
+          ref={showSelectedButtonRef}
+          type="button"
+          className={styles.actionButton}
+          onClick={handleShowSelected}
+          disabled={loading || selectedItem === undefined}
+          aria-controls={displayedItem !== undefined ? detailsId : undefined}
+        >
+          Wyświetl zaznaczony
+        </button>
         <button
           type="button"
           className={styles.actionButton}
@@ -100,21 +152,25 @@ export function GridWrapper<T>({
         </button>
       </div>
 
-      {displayedItem && <GridSelectedDetails data={displayedItem} id={detailsId} />}
-      <GridRowActions
-        dataItemKey={dataItemKey}
-        displayedId={displayedItem != null ? displayedId : null}
-        detailsId={detailsId}
-        loading={loading}
-        onToggle={handleShowSelected}
-      >
+      {displayedItem && (
+        <GridSelectedDetails
+          data={displayedItem}
+          id={detailsId}
+          onClose={handleCloseDetails}
+        />
+      )}
+      <GridRowStyleContext value={getRowClassName}>
         <Grid
+          style={gridStyle}
           data={data}
-          rows={{ data: CustomRow }}
+          rows={{ data: GridDataRow }}
           dataItemKey={dataItemKey}
+          navigatable
           selectable={{
             enabled: Boolean(onSelectionChange),
             mode: "single",
+            cell: false,
+            drag: false,
           }}
           select={selectedId == null ? {} : { [String(selectedId)]: true }}
           onSelectionChange={handleSelectionChange}
@@ -127,7 +183,7 @@ export function GridWrapper<T>({
             previousNext: true,
             info: false,
             pageSizes: false,
-            responsive: false,
+            responsive: true,
           }}
           skip={(pagination.page - 1) * pagination.pageSize}
           take={pagination.pageSize}
@@ -142,7 +198,9 @@ export function GridWrapper<T>({
             setExpandedId(expandedKey ?? null);
           }}
           showLoader={loading}
-          loader={<LoadingOverlay message={message} />}
+          loader={loaderContainer
+            ? createPortal(<LoadingOverlay message={message} />, loaderContainer)
+            : null}
         >
           {columns.map((column) => (
             <KendoGridColumn
@@ -150,21 +208,15 @@ export function GridWrapper<T>({
               field={column.field}
               title={column.title}
               {...(column.width !== undefined ? { width: column.width } : {})}
-              filter={column.filter ?? "text"}
-              filterable={column.filterable ?? true}
-              {...(column.filterCell
-                ? { cells: { filterCell: column.filterCell } }
+              filter="text"
+              filterable={column.filter === true}
+              {...(column.filter === true
+                ? { cells: { filterCell: column.filterCell ?? TextFilterCell } }
                 : {})}
             />
           ))}
-          <KendoGridColumn
-            title="Akcje"
-            filterable={false}
-            sortable={false}
-            cells={{ data: GridRowActionCell }}
-          />
         </Grid>
-      </GridRowActions>
+      </GridRowStyleContext>
     </div>
   );
 }

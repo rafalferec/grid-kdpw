@@ -1,260 +1,207 @@
-# KDPW — fundament aplikacji
+# KDPW — zadanie rekrutacyjne Frontend
 
-Etap 2: React 19, TypeScript strict i Vite. Dostępny jest układ aplikacji,
-nawigacja i dwa widoki „w przygotowaniu”. Zakres i kierunek zależności wynikają
-z [AGENTS.md](AGENTS.md) i [architektury](docs/architecture.md).
+Aplikacja React 19 i TypeScript prezentująca produkty oraz zamówienia w tabelach
+KendoReact Grid. Oba widoki korzystają z jednego generycznego komponentu
+`GridWrapper<T>`. Pobieranie danych, filtrowanie i paginacja są realizowane przez
+API; RTK Query zarządza zapytaniami i pamięcią podręczną.
 
 ## Uruchomienie
+
+Wymagany jest Node.js zgodny z `package.json`. Zalecana wersja **22.23.2**
+znajduje się w `.nvmrc`.
 
 ```sh
 nvm use
 npm ci
-cp .env.example .env.local
+```
+
+Utwórz `.env.local` na podstawie `.env.example`, jeśli nie masz jeszcze własnej
+konfiguracji:
+
+```dotenv
+VITE_API_URL=https://api.sondahub.com/v1/store/
+```
+
+Następnie uruchom aplikację:
+
+```sh
 npm run dev
 ```
 
-Node 22.23.2 jest wskazany w `.nvmrc`; Vite 8 wymaga co najmniej Node 20.19
-lub 22.12. W tym środowisku dostępny jest odpowiedni Node 22, ale domyślny
-Node 18 nie wystarcza. [Wymagania Vite](https://vite.dev/guide/)
+Otwórz adres wypisany przez Vite w terminalu. Ścieżka `/` przekierowuje na
+`/products`; drugi widok jest dostępny pod `/orders`.
 
-Lokalny `.env.local` został przygotowany z publicznym adresem z przykładu.
-Nie nadpisuj własnej konfiguracji poleceniem `cp`, jeżeli plik już istnieje.
-Na innym stanowisku utwórz go po instalacji; na CI ustaw `VITE_API_URL` przed
-buildem. `.env.example` nie jest automatycznie wczytywany przez Vite.
-Zmienne `VITE_` są publiczne i nie mogą zawierać sekretów.
-[Środowisko Vite](https://vite.dev/guide/env-and-mode)
+Aplikacja korzysta z publicznego API SondaHub i nie wysyła danych logowania ani
+klucza API. Nie wymaga uruchomienia własnego backendu. Zmienna `VITE_API_URL`
+jest obowiązkowa i trafia do kodu przeglądarkowego — nie należy umieszczać w niej
+sekretów. Po jej zmianie uruchom ponownie serwer deweloperski.
 
-`baseApi` waliduje adres przy inicjalizacji: wymagany jest bezwzględny HTTP(S),
-bez danych logowania, query i fragmentu. Zachowuje ścieżkę bazową i dodaje
-końcowy slash. Brak konfiguracji powoduje jednoznaczny błąd, bez domyślnego
-adresu wpisanego w transport. Testy mają osobny adres `api.example.test`
-i MSW odrzucający nieobsłużone żądania.
+## Realizacja wymagań
 
-| Polecenie | Przeznaczenie |
+| Wymaganie | Implementacja |
 | --- | --- |
-| `npm run dev` | Serwer developerski Vite |
-| `npm run typecheck` | Typy aplikacji, testów i konfiguracji Vite |
-| `npm run lint` | ESLint, React Hooks, Refresh i granice modułów |
-| `npm test` | Vitest w trybie obserwowania zmian |
-| `npm run test:run` | Jednorazowe wykonanie testów |
-| `npm run build` | Kontrola typów i build do `dist/` |
-| `npm run preview` | Lokalny podgląd istniejącego buildu |
+| React 19 i TypeScript | Komponenty funkcyjne, tryb `strict`, generyczne kontrakty; bez jawnego `any` w kodzie aplikacji i testach. |
+| KendoReact Grid | Wspólna implementacja w `GridWrapper<T>`, używana dla modeli `Product` i `Order`. |
+| Stronicowanie serwerowe | Parametry `page` i `limit`; liczba rekordów pochodzi z `meta.total` odpowiedzi API. |
+| Filtrowanie kolumn | Konfiguracja w `columns.ts`; input tekstowy i dropdown, możliwość łączenia filtrów wielu kolumn. |
+| Operacje na serwerze | Filtry są mapowane na parametry HTTP `_like`; brak lokalnego filtrowania i paginacji kolekcji. |
+| Rozwijanie szczegółów | `RecordDetails` pokazuje pola pominięte w kolumnach; kontrolowane `detailExpand` pozwala rozwinąć jeden wiersz jednocześnie. |
+| Zaznaczanie wiersza | Pojedynczy wybór oparty na konfigurowalnym `dataItemKey` i kontrolowanym `selectedId`. |
+| Wyświetlenie wybranego rekordu | Przycisk „Wyświetl zaznaczony” pokazuje dane nad gridem. Panel można zamknąć; zmiana zaznaczenia ukrywa panel. |
+| Refresh | Przycisk wywołuje `refetch()` bieżącego zapytania, zachowując filtry i stronę. |
+| Preloader | Nakładka nad wierszami podczas pobierania, odświeżania i oczekiwania na ustabilizowanie filtra. |
+| Stylizacja | Motyw Kendo Default, CSS Modules, wyróżnienie nagłówka, filtrów, paginacji i zaznaczenia. |
+| Warunkowe kolory | Produkty dostępne są zielone, niedostępne czerwone. Zamówienia `paid` i `shipped` są zielone, `cancelled` czerwone. |
 
-## Zrealizowany zakres
+Grid obsługuje filtrowanie dowolnego pola wskazanego w konfiguracji, o ile API
+obsługuje odpowiadający mu parametr. Filtr jest włączany jawnie przez
+`filter: true`. W obecnym widoku produktów kolumna `id` nie ma filtra.
 
-- Jeden store z reducerem i middleware `baseApi`; bez dodatkowych slices.
-- `baseApi` ma puste endpointy. Nie wykonuje żądań przy renderowaniu aplikacji.
-- Jeden `BrowserRouter` w `AppProviders`; `/` przekierowuje z `replace`
-  na `/products`, dostępne są `/orders` i komunikat dla nieznanej trasy.
-- App importuje widoki przez publiczne indexy features. Shared pozostaje
-  niezależne od App i Features.
-- CSS Modules dla układu, globalne tokeny i jeden import motywu Kendo.
-- Semantyczny nagłówek, nawigacja, główna treść, skip link i widoczny focus.
-- Jeden test RTL sprawdza układ, przekierowanie i nawigację Tab/Enter.
-- MSW uruchamia serwer testowy bez handlerów biznesowych.
-- `ApiResponse`, `ApiPaginationParams` i unia `ApiFailure` przygotowują kontrakt
-  transportu. `normalizeApiError.ts` powstanie wraz z odbiorcą w etapie zapytań;
-  nie dodajemy pustej funkcji ani sztucznego użycia.
+## Obsługa aplikacji
 
-GridWrapper, endpointy, modele, filtry, szczegóły, selection i paginacja biznesowa
-pozostają zakresem kolejnych etapów. Hosting produkcyjny będzie wymagał fallbacku
-SPA do `index.html`, również dla bezpośredniego wejścia na `/orders`.
+1. Wybierz widok „Produkty” lub „Zamówienia”.
+2. Wpisz wartość pod nagłówkiem kolumny albo wybierz opcję z dropdownu.
+   Zmiana filtra wraca na pierwszą stronę. Puste wartości usuwają dany filtr.
+3. Przejdź na kolejną stronę — aktywne filtry pozostają zachowane.
+4. Zaznacz wiersz i kliknij „Wyświetl zaznaczony”, aby pokazać jego dane
+   nad tabelą. Przycisk „Zamknij” ukrywa panel i przywraca fokus na przycisk
+   wyświetlania rekordu.
+5. Rozwiń wiersz przyciskiem w pierwszej kolumnie, aby zobaczyć dodatkowe pola.
+6. Kliknij „Refresh”, aby ponowić zapytanie z aktualnymi parametrami.
 
-## Zależności i decyzje o wersjach
+Błąd pobierania jest prezentowany komunikatem z przyciskiem „Spróbuj ponownie”.
+Na małych ekranach tabela przewija się poziomo, a Kendo synchronizuje nagłówek
+z wierszami. Paginacja jest responsywna, a przyciski nad tabelą mogą się zawijać.
+Status lub dostępność są również prezentowane jako dane — kolor nie jest ich
+jedynym oznaczeniem.
 
-Bezpośrednie zależności są przypięte, a całe drzewo utrwala `package-lock.json`.
-
-| Pakiet | Wersja |
-| --- | --- |
-| `react`, `react-dom` | 19.3.0 |
-| `react-router-dom` | 7.18.4 |
-| `@reduxjs/toolkit` | 2.13.0 |
-| `react-redux` | 9.3.0 |
-| `@progress/kendo-react-grid` | 16.2.0 |
-| `@progress/kendo-theme-default` | 14.6.1 |
-| `typescript` | 5.9.3 |
-| `vite`, `@vitejs/plugin-react` | 8.3.4, 6.1.2 |
-| `eslint`, `@eslint/js` | 10.12.0, 10.0.1 |
-| `typescript-eslint` | 8.71.1 |
-| `eslint-plugin-boundaries` | 7.2.0 |
-| `eslint-import-resolver-typescript` | 4.4.5 |
-| `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh` | 7.1.1, 0.5.7 |
-| `globals` | 17.13.0 |
-| `vitest`, `jsdom`, `msw` | 4.1.11, 30.1.2, 2.15.0 |
-| `@testing-library/react`, `@testing-library/dom` | 16.3.3, 10.4.2 |
-| `@testing-library/user-event`, `@testing-library/jest-dom` | 14.6.7, 7.0.1 |
-| `@types/react`, `@types/react-dom`, `@types/node` | 19.3.0, 19.3.0, 22.20.5 |
-| `patch-package` | 8.0.1 |
-
-React Router używa deklaratywnych API przez wymagany `react-router-dom`.
-Nie dodano alternatywnego stanu ani osobnego klienta HTTP.
-TypeScript 5.9.3 i Vitest 4.1.11 tworzą zweryfikowany stabilny zestaw:
-deklaracje `Assertion` w Vitest 5.0.3 i jest-dom 7.0.1 były niezgodne.
-Wszystkie wymagane flagi strict są włączone. `skipLibCheck` pozostaje wyłączone.
-
-### Poprawka deklaracji Redux Toolkit
-
-RTK 2.13.0 zawiera deklaracje niezgodne z `exactOptionalPropertyTypes`.
-Błąd odtworzono również w RTK 2.11.2 i 2.9.2. Zamiast utrzymywać starszy RTK,
-stosujemy [jawną poprawkę](patches/@reduxjs+toolkit+2.13.0.patch), nakładaną przez
-`postinstall` i `patch-package --error-on-fail`:
-
-1. `SerializedError.code` dopuszcza jawne `undefined`, zgodnie z konstruktorem
-   `TaskAbortError` w dostarczonym kodzie biblioteki.
-2. `OverrideThunkApiConfigs` zachowuje przecięcie `NewConfig & Omit<...>`
-   bez dodatkowego mapowania przez `Id`, które powodowało błąd ograniczeń
-   generyków przy dokładnych właściwościach opcjonalnych.
-
-Zmiana dotyczy obu plików deklaracji (`.d.ts`, `.d.mts`), nie kodu wykonywalnego.
-Nie zmienia ograniczeń dispatch/state i nie wyłącza sprawdzania typów.
-Przy aktualizacji RTK najpierw sprawdź niezmodyfikowaną paczkę; usuń patch
-i narzędzie, gdy upstream przejdzie pełny typecheck. Instalacja developerska
-wymaga devDependencies, ponieważ to w niej działa patch i build.
-
-### Kontrola zależności
-
-`overrides.handlebars = 4.7.10` aktualizuje przypiętą zależność pluginu granic
-i usuwa zgłoszenia krytyczne dla 4.7.9. Pozostałe ostrzeżenia npm dotyczą
-`braces` 3.0.3: sześć pozycji high obejmuje ten sam problem i zależne narzędzia
-(`micromatch`, Boundaries, patch-package). W chwili weryfikacji nie ma nowszego
-naprawionego `braces`. Problem dotyczy nadmiernie zagnieżdżonych wzorców.
-W tym projekcie wzorce pochodzą z lokalnej konfiguracji; narzędzia te nie
-wchodzą do bundla aplikacji. Nie jest to deklaracja braku ryzyka dla narzędzi.
-[Advisory braces](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
-
-Automatyczny `audit fix --force` sugeruje stare, niezgodne wydania narzędzi;
-nie zastosowano go. Ponownie sprawdź advisory przy aktualizacji zależności.
-`npm audit --omit=dev` zakończył się wynikiem 0 podatności.
-
-## Granice architektoniczne
-
-ESLint 10 korzysta z flat config. Boundaries 7 używa `policies` oraz osobnych
-deskryptorów plików wejścia i deklaracji. Każdy feature jest odrębnym elementem.
-Zakazane są Shared → Features/App, Features → App, Products ↔ Orders oraz
-deep imports z App do feature. Alias `@/` jest rozwiązywany z tego samego
-tsconfig, który stosuje TypeScript; Vitest współdzieli konfigurację Vite.
-
-Sprawdzono przypadki z aliasem, ścieżkami względnymi, reeksportem i importem
-typu oraz przypadki poprawne. Nieznane pliki i nierozpoznane lokalne importy
-również są błędami. Reguła dla przyszłego GridWrapper i hooka stanu blokuje
-RTK oraz `shared/api`; nie wymaga tworzenia pustych katalogów.
-
-## KendoReact: integracja i licencja
-
-Weryfikacja: 8–9 października 2026. Manifest zainstalowanego Grid 16.2.0
-dopuszcza `react` i `react-dom` `^18.0.0 || ^19.0.0`.
-Docelowy import to `import { Grid, GridColumn } from '@progress/kendo-react-grid'`.
-Obecny etap nie renderuje Grid i nie potwierdza działania jego funkcji Premium.
-[Instalacja i import Grid](https://www.telerik.com/kendo-react-ui/components/grid/getting-started/get-started)
-
-Npm automatycznie instaluje wymagane peer dependencies Grid; nie użyto
-`--legacy-peer-deps`, `--force` ani pakietu obejmującego wszystkie komponenty.
-Manifest wymaga KendoReact 16.2.0: animation, buttons, common, conversational-ui,
-data-tools, dateinputs, dialogs, dropdowns, form, indicators, inputs, intl,
-labels, layout i popup. Wymaga też kendo-csv, data-query, drawing, file-saver,
-licensing i svg-icons. Ich obecność wynika z paczki Grid, nie z użycia w aplikacji
-eksportu, AI czy lokalnego przetwarzania. Dalsze zależności przechodnie utrwala
-lockfile. Motyw Default importowany jest raz w `main.tsx`, przed stylami aplikacji.
-
-| Funkcja przyszłego GridWrapper | Aktualne API / ograniczenie |
-| --- | --- |
-| Paginacja | Kontrolowane `pageable`, `skip`, `take`, `total`, `onPageChange`; pager liczbowy z dropdownem jest Free |
-| Filtrowanie | `filterable`, `filter`, `onFilterChange`; filtr wiersza jest Free, zewnętrzne i wielokolumnowe oraz serwerowe scenariusze są wskazane jako Premium |
-| Selection | `selectable`, `select`, `onSelectionChange`; pojedynczy wiersz jest Free |
-| Szczegóły | `detail`, `detailExpand`, `onDetailExpandChange`; Premium |
-| Loading | `showLoader`, opcjonalnie `loader`; standardowy wskaźnik jest Free |
-| Customizacja | `rows.data` i `GridColumn.cells.data`; własne renderery są Premium, podstawowe stylowanie jest Free |
-
-Źródła: [Free/Premium](https://www.telerik.com/kendo-react-ui/components/getting-started/free-vs-premium),
-[paging](https://www.telerik.com/kendo-react-ui/components/grid/paging),
-[filtering](https://www.telerik.com/kendo-react-ui/components/grid/filtering),
-[selection](https://www.telerik.com/kendo-react-ui/components/grid/selection),
-[detail rows](https://www.telerik.com/kendo-react-ui/components/grid/rows/detail),
-[custom rows](https://www.telerik.com/kendo-react-ui/components/grid/rows/custom-rows),
-[GridProps](https://www.telerik.com/kendo-react-ui/components/grid/api/gridprops).
-
-W kolejnym etapie nie używamy przestarzałych `cellRender`/`rowRender` ani
-`autoProcessData` do lokalnego filtrowania/paginacji. Dane przetwarza serwer,
-a adapter Kendo pozostaje wewnątrz generycznego wrappera.
-
-Pełny zakres zadania wymaga ważnej licencji komercyjnej lub próbnej.
-Instalacja paczki nie aktywuje Premium. Klucz należy uzyskać na koncie Telerik
-i aktywować zgodnie z dokumentacją producenta, np. dostarczając lokalny
-`telerik-license.txt` i uruchamiając `npx kendo-ui-license activate`.
-W CI klucz pochodzi z chronionego sekretu według instrukcji producenta,
-nigdy ze zmiennej `VITE_`. Pliki kluczy są ignorowane przez Git.
-Bez ważnego klucza funkcje Premium mogą wyświetlać ostrzeżenia i znaki wodne.
-Nie uzyskano ani nie aktywowano klucza w tym etapie.
-[Aktywacja licencji](https://www.telerik.com/kendo-react-ui/components/my-license)
-
-## Pliki etapu 2
-
-Utworzone pliki źródłowe i konfiguracyjne:
+## Przepływ danych i filtrowanie
 
 ```text
-.env.example
-.env.local                   (lokalny, ignorowany)
-.gitignore
-.nvmrc
-README.md
-package.json
-package-lock.json
-index.html
-eslint.config.js
-tsconfig.json
-tsconfig.base.json
-tsconfig.app.json
-tsconfig.node.json
-vite.config.ts
-patches/@reduxjs+toolkit+2.13.0.patch
-tests/setup.ts
-tests/server.ts
-src/vite-env.d.ts
-src/main.tsx
-src/app/App.tsx
-src/app/App.module.css
-src/app/providers/AppProviders.tsx
-src/app/router/AppRouter.tsx
-src/app/router/AppRouter.test.tsx
-src/app/store/store.ts
-src/shared/api/baseApi.ts
-src/shared/api/api.types.ts
-src/features/products/ProductsPage.tsx
-src/features/products/index.ts
-src/features/orders/OrdersPage.tsx
-src/features/orders/index.ts
-src/styles/globals.css
-src/styles/tokens.css
+Interakcja w GridWrapper
+  → aktualizacja stanu w ProductsPage / OrdersPage
+  → debounce filtra (400 ms)
+  → buildLikeFilters: konfiguracja kolumn → parametry *_like
+  → RTK Query → HTTP GET
+  → odpowiedź API: data + meta → GridWrapper
 ```
 
-`node_modules/` i `dist/` to wygenerowane, ignorowane artefakty. Nie inicjalizowano
-Git. `AGENTS.md` pozostaje niezmieniony; w `docs/architecture.md` dodano tylko
-informację o wykonaniu fundamentu i odsyłacz do niniejszej dokumentacji.
+Endpointy względem `VITE_API_URL`:
 
-## Wyniki weryfikacji etapu 2
+- `GET products`
+- `GET orders`
 
-Wykonano 9 października 2026, po ponownej instalacji z lockfile:
+Przykładowe parametry budowane przez aplikację:
 
-| Kontrola | Wynik |
+```text
+products?page=2&limit=10&name_like=Sonora&price_like=200.50
+orders?page=1&limit=10&status_like=paid&currency_like=USD
+```
+
+Wszystkie filtry korzystają z `_like`, również wartości z dropdownu oraz inputy
+kolumn liczbowych. Wartości są wysyłane jako tekst; aplikacja nie implementuje
+zakresów liczbowych ani osobnego operatora równości. Ostateczne dopasowanie
+rekordów wykonuje API.
+
+W czasie debounce zapytanie jest wstrzymane przez `skip`, aby nie pobierać danych
+z nieaktualnym filtrem. Stan odpowiedzi pozostaje w RTK Query, a lokalny stan
+React przechowuje ustawienia widoku i interakcji. `GridWrapper` nie wykonuje
+zapytań HTTP ani nie zna nazw endpointów.
+
+W trybie deweloperskim przed zapytaniem dodawane jest **500 ms opóźnienia**, aby
+ułatwić obserwację preloadera. Opóźnienie nie jest dodawane w buildzie produkcyjnym.
+
+## Architektura
+
+```text
+src/
+├── app/                       # Providery, Redux store, routing i układ
+├── features/
+│   ├── products/              # Widok, model, kolumny i endpoint produktów
+│   └── orders/                # Widok, model, kolumny i endpoint zamówień
+├── shared/
+│   ├── api/                   # baseApi, kontrakty odpowiedzi, mapper filtrów
+│   ├── components/
+│   │   ├── GridWrapper/       # Kendo Grid, filtry, zaznaczenie i panel rekordu
+│   │   ├── LoadingOverlay/    # Wskaźnik ładowania
+│   │   ├── RecordDetails/     # Rozwinięte szczegóły
+│   │   └── RecordFields/      # Prezentacja pól, w tym obiektów zagnieżdżonych
+│   └── hooks/                 # useDebounce
+└── styles/                    # Globalne style i tokeny
+
+tests/                         # Konfiguracja środowiska testowego i MSW
+```
+
+Kierunek zależności to `App → Features → Shared`. Reguły ESLint kontrolują
+granice modułów. Nie ma dodatkowych Redux slices kopiujących stan serwerowy.
+
+### Kontrakt GridWrapper
+
+[GridWrapper.types.ts](src/shared/components/GridWrapper/GridWrapper.types.ts)
+definiuje publiczne API komponentu:
+
+| Parametry | Odpowiedzialność |
 | --- | --- |
-| `npm ci` | Sukces, patch RTK nakładany w `postinstall` |
-| `npm run typecheck` | Sukces, pełne sprawdzanie deklaracji importowanych bibliotek |
-| `npm run lint` | Sukces, 0 błędów i ostrzeżeń |
-| `npm run test:run` | 1 test / 1 plik — sukces |
-| `npm test -- --watch` | Test przechodzi, tryb obserwowania uruchomiony i zakończony |
-| `npm run build` | Sukces; JS 337,03 kB, CSS 750,82 kB przed gzip |
-| `npm ls --all` | Spójne drzewo, bez brakujących lub niezgodnych zależności |
-| Próbki granic ESLint | 16 przypadków poprawnych i zabronionych — sukces |
-| Próba typów po patchu RTK | Poprawny thunk działa; błędny argument oraz state/dispatch w konfiguracji thunk slice nadal są odrzucane |
-| Vite dev w przeglądarce | Przekierowanie `/`, przejście Products → Orders, reload `/orders`, widoczny focus |
-| Vite preview w przeglądarce | Bezpośrednie `/orders` i komunikat dla nieznanej trasy działają |
+| `data`, `columns` | Rekordy bieżącej strony i konfiguracja kolumn powiązana z `keyof T`. |
+| `pagination` | Numer strony, rozmiar strony, liczba rekordów i callback zmiany. |
+| `filter`, `onFilterChange` | Kontrolowany stan filtrów Kendo. |
+| `dataItemKey`, `selectedId`, `onSelectionChange` | Identyfikacja i zaznaczenie rekordu; identyfikator może być tekstem lub liczbą. |
+| `detail` | Komponent prezentujący rozwinięte szczegóły. |
+| `loading`, `message`, `onRefresh` | Wskaźnik ładowania, komunikat i callback odświeżania. |
+| `rowClassName` | Warunkowe przypisanie klasy CSS do rekordu. |
 
-Próbki importów i dodatkowa próba kompilatora były jednorazową weryfikacją;
-nie pozostawiły modułów w aplikacji ani dodatkowych testów biznesowych.
-Duży arkusz CSS pochodzi z pełnego motywu Kendo Default. Optymalizacja zakresu
-motywu może być oceniona po wdrożeniu Grid, gdy znany będzie zestaw komponentów.
+Dodanie kolejnego zbioru danych wymaga przygotowania jego modelu, kolumn,
+zapytania i widoku. Nie wymaga dopisywania logiki biznesowej do `GridWrapper`.
 
-Instalacja raz przerwała się z powodu braku miejsca na dysku. Usunięto wyłącznie
-cache utworzony dla tego zadania; następne `npm ci` zakończyło się sukcesem.
-Nie usuwano plików użytkownika. Nie weryfikowano jeszcze zapytań SondaHub,
-renderowania Grid ani aktywacji licencji — nie należą do zakresu etapu 2.
+Szerokości kolumn można ustawiać indywidualnie. Minimalna szerokość tabeli
+chroni kolumny bez `width` przed nadmiernym ściśnięciem na telefonie, bez
+przypisywania im sztywnej szerokości. Portal loadera umieszcza nakładkę w
+kontenerze wierszy Kendo, dzięki czemu nie zasłania filtrów i paginacji.
+
+## Technologie i typowanie
+
+- React 19.3.0, TypeScript 5.9.3 i Vite 8.3.4.
+- KendoReact Grid 16.2.0 i motyw Kendo Default 14.6.1.
+- Redux Toolkit 2.13.0 z RTK Query oraz React Router.
+- CSS Modules, ESLint, Vitest, React Testing Library i MSW.
+
+Włączone są `strict`, `noImplicitAny`, `strictNullChecks`,
+`noUncheckedIndexedAccess` i `exactOptionalPropertyTypes`. Konfiguracja aplikacji
+ma `skipLibCheck: true`: kod aplikacji jest sprawdzany, ale deklaracje zależności
+nie są w pełni kontrolowane. Typy odpowiedzi API opisują oczekiwany kontrakt;
+nie stanowią walidacji danych w czasie wykonania.
+
+Instalacja przez `npm ci` nakłada patch deklaracji Redux Toolkit z katalogu
+`patches/` przy użyciu `patch-package`. Poprawka dotyczy typów, nie kodu
+wykonywalnego biblioteki. Wersje zależności utrwala `package-lock.json`.
+
+## Kontrola jakości
+
+| Polecenie | Działanie |
+| --- | --- |
+| `npm run typecheck` | Sprawdzenie typów aplikacji, testów i konfiguracji Vite. |
+| `npm run lint` | ESLint z kontrolą granic modułów i bez dopuszczalnych ostrzeżeń. |
+| `npm run test:run` | Jednorazowe uruchomienie testów. |
+| `npm test` | Testy w trybie obserwowania zmian. |
+| `npm run build` | Typecheck i przygotowanie plików produkcyjnych w `dist/`. |
+| `npm run preview` | Lokalny podgląd wcześniej zbudowanej aplikacji. |
+
+Testy obejmują routing i nawigację klawiaturą, mapowanie filtrów, zapytania
+serwerowe, zachowanie parametrów podczas paginacji i Refresh, zaznaczanie,
+wyświetlanie danych oraz rozwijanie szczegółów. MSW przechwytuje zapytania
+na osobny adres testowy, więc testy nie wymagają dostępności SondaHub.
+
+Vitest przetwarza CSS, aby uwzględniać widoczność elementów. Test zaznaczania
+jawnie wskazuje wynik `elementFromPoint`, ponieważ jsdom nie wylicza geometrii
+strony. Testy w jsdom nie zastępują sprawdzenia rzeczywistego układu mobilnego.
+
+## KendoReact i publikacja
+
+KendoReact podlega warunkom licencji producenta. Konfigurację klucza opisuje
+[dokumentacja licencjonowania Telerik](https://www.telerik.com/kendo-react-ui/components/my-license/).
+Pliki `telerik-license.txt` i `kendo-ui-license.txt` są ignorowane przez Git.
+Klucza licencyjnego nie należy umieszczać w zmiennych `VITE_`.
+
+Podczas budowania należy ustawić `VITE_API_URL`. Hosting aplikacji powinien
+obsługiwać przekierowanie nieznanych ścieżek do `index.html`, aby bezpośrednie
+wejścia na `/products` i `/orders` działały z `BrowserRouter`.

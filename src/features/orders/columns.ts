@@ -1,16 +1,17 @@
 import type { GridColumn } from "@/shared/components/GridWrapper/GridWrapper.types";
 import type { Order } from "./types/order.types";
-import { createDropdownFilter } from "@/shared/components/GridWrapper/DropdownFilterCell/createDropdownFilter";
+import { createDropdownFilter } from "@/shared/components/GridWrapper/filters/DropdownFilterCell/createDropdownFilter";
 
 export const columns: GridColumn<Order>[] = [
   {
     field: "number",
     title: "Numer zamówienia",
-    filter: "text",
+    filter: true,
   },
   {
     field: "status",
     title: "Status",
+    filter: true,
     filterCell: createDropdownFilter([
       "pending",
       "paid",
@@ -21,11 +22,11 @@ export const columns: GridColumn<Order>[] = [
   {
     field: "total",
     title: "Kwota",
-    filter: "numeric",
+    filter: true,
   },
   {
     field: "currency",
     title: "Waluta",
-    filter: "text",
+    filter: true,
   },
 ];

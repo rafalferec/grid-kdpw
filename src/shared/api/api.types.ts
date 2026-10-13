@@ -15,7 +15,6 @@ export interface ApiPaginationParams {
   limit: number;
 }
 
-export interface ApiError {
-  message: string;
-  status?: number;
-}
+export type LikeFilters<T> = Partial<
+  Record<`${keyof T & string}_like`, string>
+>;

@@ -1,15 +1,13 @@
 import type { CompositeFilterDescriptor } from '@progress/kendo-data-query';
-import type { GridCustomFilterCellProps, GridDetailRowProps } from '@progress/kendo-react-grid';
+import type { GridCustomFilterCellProps, GridProps } from '@progress/kendo-react-grid';
 import type { ComponentType } from 'react';
 
 export interface GridColumn<T> {
   field: keyof T & string;
   title: string;
   width?: number;
-  filter?: 'text' | 'numeric' | 'date' | 'boolean';
-  filterable?: boolean;
+  filter?: boolean;
   filterCell?: ComponentType<GridCustomFilterCellProps>;
-
 }
 
 export interface GridPagination {
@@ -29,8 +27,8 @@ export interface GridWrapperProps<T> {
   onFilterChange?: (filter: CompositeFilterDescriptor) => void;
   dataItemKey: keyof T & string;
   selectedId?: string | number | null;
-  onSelectionChange?: (id: string | number) => void;
-  detail?: ComponentType<GridDetailRowProps>;
+  onSelectionChange?: (id: string | number | null) => void;
+  detail?: GridProps["detail"];
   onRefresh?: () => void;
   rowClassName?: (item: T) => string;
 }

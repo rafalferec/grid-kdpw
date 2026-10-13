@@ -2,17 +2,43 @@
     position: relative;
     width: 100%;
     min-width: 0;
+    max-width: 100%;
+}
+
+.wrapper :global(.k-grid) {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.wrapper :global(.k-grid-aria-root),
+.wrapper :global(.k-grid-container),
+.wrapper :global(.k-grid-content) {
+    min-width: 0;
+}
+
+.wrapper :global(.k-grid-header table),
+.wrapper :global(.k-grid-content > .k-grid-table-wrap > table) {
+    min-width: var(--grid-table-min-width);
+}
+
+.wrapper :global(.k-grid-content) {
     overflow-x: auto;
 }
 
 .wrapper :global(.k-filtercell-operator) {
-
     display: none;
+}
 
+.wrapper :global(.k-grid-container) {
+    position: relative;
+    min-height: 160px;
 }
 
 .actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 12px;
     margin-bottom: 16px;
@@ -126,18 +152,6 @@
     outline-offset: 2px;
 }
 
-@media (max-width: 48rem) {
-    .wrapper :global(.k-pager-numbers-wrap) {
-        gap: 4px;
-    }
-
-    .wrapper :global(.k-pager-numbers) {
-        gap: 0;
-        margin-inline: 4px;
-    }
-}
-
-
 .wrapper :global(.k-grid-header) {
     background: #fff;
 }
@@ -213,7 +227,42 @@
     outline-offset: 2px;
 }
 
+.wrapper :global(.rowSuccess td) {
+    background-color: #e8f5e9;
+}
+
+.wrapper :global(.rowDanger td) {
+    background-color: #ffebee;
+}
+
+.wrapper :global(.k-grid .k-table-tbody > tr[aria-selected="true"]) {
+    outline: 2px solid #2458a6;
+    outline-offset: -2px;
+}
+
 @media (max-width: 48rem) {
+    .actions {
+        gap: 8px;
+    }
+
+    .actionButton {
+        flex: 1 1 auto;
+        min-height: 44px;
+    }
+
+    .wrapper :global(.k-pager) {
+        padding: 12px 8px;
+    }
+
+    .wrapper :global(.k-pager-numbers-wrap) {
+        gap: 4px;
+    }
+
+    .wrapper :global(.k-pager-numbers) {
+        gap: 0;
+        margin-inline: 4px;
+    }
+
     .wrapper :global(.k-grid-header tr:not(.k-filter-row) > th),
     .wrapper :global(.k-grid-header .k-filter-row > td),
     .wrapper :global(.k-grid-header .k-filter-row > th),
@@ -221,15 +270,3 @@
         padding-inline: 12px;
     }
 }
-
-.wrapper :global(.rowSuccess td) {
-
-    background-color: #e8f5e9;
-  
-  }
-  
-  .wrapper :global(.rowDanger td) {
-  
-    background-color: #ffebee;
-  
-  }

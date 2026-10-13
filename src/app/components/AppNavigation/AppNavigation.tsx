@@ -6,10 +6,10 @@ export function AppNavigation() {
     <nav aria-label="Nawigacja główna">
       <ul className={styles.navigation}>
         <li>
-          <NavLink to="/products">Products</NavLink>
+          <NavLink to="/products">Produkty</NavLink>
         </li>
         <li>
-          <NavLink to="/orders">Orders</NavLink>
+          <NavLink to="/orders">Zamówienia</NavLink>
         </li>
       </ul>
     </nav>

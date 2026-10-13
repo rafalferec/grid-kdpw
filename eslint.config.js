@@ -85,7 +85,6 @@ export default defineConfig([
   {
     files: [
       'src/shared/components/GridWrapper/**/*.{ts,tsx}',
-      'src/shared/hooks/useServerGridState*.{ts,tsx}',
     ],
     rules: {
       'no-restricted-imports': ['error', {
