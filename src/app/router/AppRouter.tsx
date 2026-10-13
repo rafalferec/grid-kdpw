@@ -13,7 +13,7 @@ export function AppRouter() {
         element={
           <>
             <h1>Nie znaleziono strony</h1>
-            <Link to="/products">Przejdź do Products</Link>
+            <Link to="/products">Przejdź do Produkty</Link>
           </>
         }
       />
